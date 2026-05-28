@@ -1,0 +1,107 @@
+Vagrant.configure("2") do |config|
+  # --------------------------------------------------
+  # Common Box
+  # --------------------------------------------------
+  config.vm.box = "almalinux/9"
+
+  # --------------------------------------------------
+  # Common Provider Config (fallback only)
+  # --------------------------------------------------
+  config.vm.provider "libvirt" do |v|
+    v.memory   = 1536
+    v.cpus     = 2
+    v.cpu_mode = "host-passthrough"
+  end
+
+  # --------------------------------------------------
+  # Common Provisioning (ALL VMs)
+  # --------------------------------------------------
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    set -e
+
+    echo "root:oracle" | chpasswd
+
+    sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+    setenforce 0 || true
+
+    sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+    sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+    systemctl restart sshd || systemctl restart ssh
+
+    cat >/etc/hosts <<EOF
+127.0.0.1   localhost
+192.168.56.10 pgmaster
+192.168.56.11 pgslave01
+192.168.56.12 monserver01
+EOF
+
+    hostname
+    hostname -I || true
+    getenforce || true
+  SHELL
+
+  # --------------------------------------------------
+  # Helper Functions
+  # --------------------------------------------------
+  def add_bridge(node)
+    node.vm.network "public_network",
+      dev:  "br0",
+      mode: "bridge",
+      type: "bridge"
+  end
+
+  def set_hostname(node, name)
+    node.vm.hostname = name
+
+    node.vm.provision "shell", privileged: true, inline: <<-SHELL
+      hostnamectl set-hostname #{name}
+      echo "#{name}" > /etc/hostname
+      sed -i "s/^127.0.0.1.*/127.0.0.1   localhost #{name}/" /etc/hosts
+      hostname
+    SHELL
+  end
+
+  # --------------------------------------------------
+  # PostgreSQL Master (4GB)
+  # --------------------------------------------------
+  config.vm.define "pgmaster" do |node|
+    set_hostname(node, "pgmaster")
+    node.vm.network "private_network", ip: "192.168.56.10"
+    add_bridge(node)
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 4096   # 🔥 4GB
+      v.cpus   = 2
+    end
+  end
+
+  # --------------------------------------------------
+  # PostgreSQL Slave 01 (4GB)
+  # --------------------------------------------------
+  config.vm.define "pgslave01" do |node|
+    set_hostname(node, "pgslave01")
+    node.vm.network "private_network", ip: "192.168.56.11"
+    add_bridge(node)
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 4096   # 🔥 4GB
+      v.cpus   = 2
+    end
+  end
+
+  # --------------------------------------------------
+  # Monitroing Server (4GB)
+  # --------------------------------------------------
+  config.vm.define "monserver01" do |node|
+    set_hostname(node, "monserver01")
+    node.vm.network "private_network", ip: "192.168.56.12"
+    add_bridge(node)
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 4096   # 🔥 4GB
+      v.cpus   = 2
+    end
+  end
+
+end
