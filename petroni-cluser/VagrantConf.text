@@ -1,0 +1,138 @@
+Vagrant.configure("2") do |config|
+
+  # --------------------------------------------------
+  # Base Box
+  # --------------------------------------------------
+  config.vm.box = "almalinux/9"
+
+  # --------------------------------------------------
+  # Common Provider Config
+  # --------------------------------------------------
+  config.vm.provider "libvirt" do |v|
+    v.memory   = 1536
+    v.cpus     = 2
+    v.cpu_mode = "host-passthrough"
+  end
+
+  # --------------------------------------------------
+  # Common Provisioning (ALL VMs)
+  # --------------------------------------------------
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    set -e
+
+    echo "root:oracle" | chpasswd
+
+    # Disable SELinux (lab only)
+    sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+    setenforce 0 || true
+
+    # Enable SSH password login
+    sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+    sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    systemctl restart sshd || systemctl restart ssh
+
+    # Clean hosts file (single source of truth)
+    cat > /etc/hosts <<EOF
+127.0.0.1   localhost
+192.168.56.10 pgmaster
+192.168.56.11 pgslave01
+192.168.56.12 pgslave02
+192.168.56.20 haproxy01
+192.168.56.21 haproxy02
+192.168.56.30 monitor
+EOF
+
+    hostname
+    hostname -I || true
+  SHELL
+
+  # --------------------------------------------------
+  # Helper: Set Hostname
+  # --------------------------------------------------
+  def set_hostname(node, name)
+    node.vm.hostname = name
+    node.vm.provision "shell", privileged: true, inline: <<-SHELL
+      hostnamectl set-hostname #{name}
+      echo "#{name}" > /etc/hostname
+    SHELL
+  end
+
+  # --------------------------------------------------
+  # PostgreSQL Master
+  # --------------------------------------------------
+  config.vm.define "pgmaster" do |node|
+    set_hostname(node, "pgmaster")
+    node.vm.network "private_network", ip: "192.168.56.10"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 3072
+      v.cpus   = 2
+    end
+  end
+
+  # --------------------------------------------------
+  # PostgreSQL Slave 01
+  # --------------------------------------------------
+  config.vm.define "pgslave01" do |node|
+    set_hostname(node, "pgslave01")
+    node.vm.network "private_network", ip: "192.168.56.11"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 3072
+      v.cpus   = 2
+    end
+  end
+
+  # --------------------------------------------------
+  # PostgreSQL Slave 02
+  # --------------------------------------------------
+  config.vm.define "pgslave02" do |node|
+    set_hostname(node, "pgslave02")
+    node.vm.network "private_network", ip: "192.168.56.12"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 3072
+      v.cpus   = 2
+    end
+  end
+
+  # --------------------------------------------------
+  # HAProxy 01
+  # --------------------------------------------------
+  config.vm.define "haproxy01" do |node|
+    set_hostname(node, "haproxy01")
+    node.vm.network "private_network", ip: "192.168.56.20"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 1536
+      v.cpus   = 1
+    end
+  end
+
+  # --------------------------------------------------
+  # HAProxy 02
+  # --------------------------------------------------
+  config.vm.define "haproxy02" do |node|
+    set_hostname(node, "haproxy02")
+    node.vm.network "private_network", ip: "192.168.56.21"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 1536
+      v.cpus   = 1
+    end
+  end
+
+  # --------------------------------------------------
+  # Monitoring Node
+  # --------------------------------------------------
+  config.vm.define "monitor" do |node|
+    set_hostname(node, "monitor")
+    node.vm.network "private_network", ip: "192.168.56.30"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 3072
+      v.cpus   = 2
+    end
+  end
+
+end
