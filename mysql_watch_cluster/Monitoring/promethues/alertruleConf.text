@@ -1,0 +1,30 @@
+groups:
+  - name: system_alerts
+    rules:
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 80
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU Usage"
+          description: "CPU > 80% on {{ $labels.instance }}"
+
+      - alert: NodeDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance Down"
+          description: "{{ $labels.instance }} is DOWN"
+
+      - alert: MySQLDown
+        expr: mysql_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL Down"
+          description: "MySQL not responding on {{ $labels.instance }}"

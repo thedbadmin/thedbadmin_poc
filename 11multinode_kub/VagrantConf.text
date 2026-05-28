@@ -1,0 +1,117 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "almalinux/9"
+
+  nodes = [
+    { name: "nomad01", ip: "192.168.56.11", role: "server" },
+    { name: "nomad02", ip: "192.168.56.12", role: "client" },
+    { name: "nomad03", ip: "192.168.56.13", role: "client" }
+  ]
+
+  nodes.each do |node_info|
+    config.vm.define node_info[:name] do |node|
+      node.vm.hostname = node_info[:name]
+
+      # Public Network (Router IP)
+      node.vm.network "public_network",
+        dev: "br0",
+        mode: "bridge"
+
+      # Private Network (Cluster Communication)
+      node.vm.network "private_network", ip: node_info[:ip]
+
+      node.vm.provider "libvirt" do |v|
+        v.memory = 4096
+        v.cpus   = 2
+        v.cpu_mode = "host-passthrough"
+      end
+
+      # ---------------------------
+      # Provisioning Script
+      # ---------------------------
+      node.vm.provision "shell", inline: <<-SHELL
+
+        # Update system
+        dnf update -y
+
+        # Install dependencies
+        dnf install -y unzip wget
+
+        # Download Nomad
+        cd /tmp
+        wget https://releases.hashicorp.com/nomad/1.8.2/nomad_1.8.2_linux_amd64.zip
+        unzip nomad_1.8.2_linux_amd64.zip
+        mv nomad /usr/local/bin/
+
+        # Create directories
+        mkdir -p /etc/nomad.d
+        mkdir -p /opt/nomad
+
+        # Detect role
+        ROLE="#{node_info[:role]}"
+
+        if [ "$ROLE" = "server" ]; then
+
+cat <<EOF > /etc/nomad.d/nomad.hcl
+datacenter = "dc1"
+data_dir   = "/opt/nomad"
+bind_addr  = "0.0.0.0"
+
+server {
+  enabled = true
+  bootstrap_expect = 1
+}
+
+advertise {
+  http = "#{node_info[:ip]}:4646"
+  rpc  = "#{node_info[:ip]}:4647"
+  serf = "#{node_info[:ip]}:4648"
+}
+EOF
+
+        else
+
+cat <<EOF > /etc/nomad.d/nomad.hcl
+datacenter = "dc1"
+data_dir   = "/opt/nomad"
+bind_addr  = "0.0.0.0"
+
+client {
+  enabled = true
+  servers = ["192.168.56.11:4647"]
+}
+
+advertise {
+  http = "#{node_info[:ip]}:4646"
+  rpc  = "#{node_info[:ip]}:4647"
+  serf = "#{node_info[:ip]}:4648"
+}
+EOF
+
+        fi
+
+        # Create systemd service
+cat <<EOF > /etc/systemd/system/nomad.service
+[Unit]
+Description=Nomad
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/nomad agent -config=/etc/nomad.d
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+        # Start Nomad
+        systemctl daemon-reexec
+        systemctl daemon-reload
+        systemctl enable nomad
+        systemctl start nomad
+
+      SHELL
+    end
+  end
+
+end

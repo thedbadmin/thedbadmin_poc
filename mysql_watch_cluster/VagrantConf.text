@@ -1,0 +1,42 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "almalinux/9"
+
+  # ----------------------------
+  # monserver01
+  # ----------------------------
+  config.vm.define "monserver01" do |node|
+    node.vm.hostname = "monserver01"
+
+    node.vm.network "public_network",
+      dev:  "br0",
+      mode: "bridge"
+
+    node.vm.network "private_network", ip: "192.168.56.21"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory   = 8000
+      v.cpus     = 4
+      v.cpu_mode = "host-passthrough"
+    end
+  end
+
+  # ----------------------------
+  # mysqldb01
+  # ----------------------------
+  config.vm.define "mysqldb01" do |node|
+    node.vm.hostname = "mysqldb01"
+
+    node.vm.network "public_network",
+      dev:  "br0",
+      mode: "bridge"
+
+    node.vm.network "private_network", ip: "192.168.56.22"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory   = 4096
+      v.cpus     = 2
+      v.cpu_mode = "host-passthrough"
+    end
+  end
+
+end

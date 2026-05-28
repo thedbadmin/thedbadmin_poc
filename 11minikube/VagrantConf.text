@@ -1,0 +1,30 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "almalinux/9"
+
+  # ---------------------------
+  # minikube01 VM
+  # ---------------------------
+  config.vm.define "minikube01" do |node|
+    node.vm.hostname = "minikube01"
+
+    # 🔥 Public Network (Bridge → br0 → 192.168.1.x from router)
+    node.vm.network "public_network",
+      dev: "br0",
+      mode: "bridge"
+
+    # 🔥 Private Network (Internal cluster)
+    node.vm.network "private_network", ip: "192.168.56.21"
+
+    node.vm.provider "libvirt" do |v|
+      v.memory = 8000
+      v.cpus   = 4
+      v.cpu_mode = "host-passthrough"
+    end
+
+    # ---------------------------
+    # Provisioning
+    # ---------------------------
+  end
+
+end
