@@ -1,0 +1,135 @@
+---Build VM 
+
+root@ubuntu05:~/11multinode_kub/ansible_lab_830# cat Vagrantfile
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "almalinux/9"
+
+  nodes = [
+    { name: "node01", ip: "192.168.56.11" },
+    { name: "node02", ip: "192.168.56.12" },
+    { name: "node03", ip: "192.168.56.13" }
+  ]
+
+  nodes.each do |node_info|
+    config.vm.define node_info[:name] do |node|
+
+      node.vm.hostname = node_info[:name]
+
+      # Private network
+      node.vm.network "private_network", ip: node_info[:ip]
+
+      node.vm.provider "libvirt" do |v|
+        v.memory = 10000
+        v.cpus = 2
+        v.cpu_mode = "host-passthrough"
+      end
+
+    end
+  end
+
+end
+
+--
+
+------chnage root password
+from root :
+password
+
+--install ansible 
+
+cat /etc/redhat-release
+sudo yum install epel-release
+sudo yum -y update
+sudo yum -y install ansible
+ansible --version
+
+------Change ssh config 
+-----------------------ssh config 
+
+
+ssh-keygen
+
+just press enter enter and no password 
+
+sudo nano /etc/ssh/sshd_config
+
+In the file, find the PasswordAuthentication line and make sure it ends with yes.
+
+Find the ChallengeResponseAuthentication option and disable it by adding no.
+
+systemctl restart sshd
+
+ssh-copy-id -i ~/.ssh/id_rsa root@centos8gb
+
+-----
+
+----------------------------
+
+[root@centos8gb ansible]# cat inventory.ini
+[dbservers]
+centos8gb centos8gb=192.168.1.62
+
+[root@centos8gb ansible]# cat playbook.yml
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Install PostgreSQL
+      yum:
+        name: postgresql-server
+        state: present
+
+    - name: Remove postgresql datadir
+      file:
+        path: "/var/lib/pgsql/data"
+        state: absent
+      become: true
+      become_user: root
+      #when: not pgsql_is_running.rc
+
+    - name: Initialize PostgreSQL database
+      command: postgresql-setup initdb
+      become_user: postgres
+
+    - name: Start PostgreSQL
+      service:
+        name: postgresql
+        state: started
+        enabled: true
+      #when: not pgsql_is_running.rc
+
+    - name: Allow remote connections to PostgreSQL
+      lineinfile:
+        path: /var/lib/pgsql/data/pg_hba.conf
+        regexp: '^host\s+all\s+all\s+127.0.0.1/32\s+ident'
+        line: 'host all all 0.0.0.0/0 md5'
+        state: present
+      notify:
+        - restart postgresql
+
+    - name: Set listen_addresses to *
+      lineinfile:
+        path: /var/lib/pgsql/data/postgresql.conf
+        regexp: '^#?\s*listen_addresses\s*=\s*.+'
+        line: 'listen_addresses = ''*'''
+        state: present
+      notify:
+        - restart postgresql
+
+  handlers:
+    - name: restart postgresql
+      service:
+        name: postgresql
+        state: restarted
+
+
+
+
+How to run playbob
+
+---check the sentax 
+ansible-playbook -i inventory.ini playbook.yml --user root --syntax-check
+
+Run the play box:
+ ansible-playbook -i inventory.ini playbook.yml --user root
