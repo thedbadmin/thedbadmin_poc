@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets:
+          - 'prometheus:9090'
+
+  - job_name: 'postgresql'
+    static_configs:
+      - targets:
+          - '192.168.1.107:9187'
+
+  - job_name: '192.168.1.107_Nexp'
+    static_configs:
+      - targets:
+          - '192.168.1.107:9100'
+
+  - job_name: 'pgbackrest'
+    static_configs:
+      - targets:
+          - '192.168.1.107:9854'
+        labels:
+          stanza: 'prod01'
+          instance_name: 'postgres-server'
