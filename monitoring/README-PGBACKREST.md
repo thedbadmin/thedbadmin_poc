@@ -3,6 +3,9 @@
 Prometheus scrapes pgbackrest_exporter from database VM.
 Grafana dashboard: **thedbadmin.com_backrest_mon_deshboard** (original thedbadmin.com build — not copied from Grafana.com)
 
+## Full student guide (both nodes, no Vagrant)
+See **[STUDENT-LAB-SETUP.md](STUDENT-LAB-SETUP.md)** — database node + monitoring node steps and dashboard import navigation.
+
 ## Provision
 ```bash
 cd /root/monitoring
