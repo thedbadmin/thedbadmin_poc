@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Custom thedbadmin.com pgBackRest backup monitoring dashboard. Built for pgbackrest_exporter + Prometheus. Monitors stanza health, backup freshness, errors, WAL archiving, and backup inventory.",
+  "description": "Original thedbadmin.com pgBackRest monitoring dashboard. Written from scratch for pgbackrest_exporter + Prometheus — not derived from any Grafana.com or third-party dashboard. Monitors stanza health, backup freshness, errors, WAL archiving, and backup inventory.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -1570,7 +1570,7 @@
     "pgbackrest",
     "backups",
     "thedbadmin",
-    "custom"
+    "original"
   ],
   "templating": {
     "list": [

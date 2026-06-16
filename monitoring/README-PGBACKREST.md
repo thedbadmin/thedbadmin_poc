@@ -1,7 +1,7 @@
 # pgBackRest Monitoring — Monitoring VM (/root/monitoring)
 
 Prometheus scrapes pgbackrest_exporter from database VM.
-Grafana dashboard: **thedbadmin.com_backrest_mon_deshboard**
+Grafana dashboard: **thedbadmin.com_backrest_mon_deshboard** (original thedbadmin.com build — not copied from Grafana.com)
 
 ## Provision
 ```bash

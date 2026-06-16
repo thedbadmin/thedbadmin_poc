@@ -1,7 +1,10 @@
-# thedbadmin.com_backrest_mon_deshboard — Custom Dashboard
+# thedbadmin.com_backrest_mon_deshboard — Original Dashboard
 
-**Built from scratch** for the thedbadmin.com pgBackRest lab.  
-Not copied from Grafana.com — designed specifically for `pgbackrest_exporter` metrics.
+**100% original thedbadmin.com work** — panels, PromQL queries, layout, and transforms were written from scratch for this lab.
+
+- No code copied from Grafana.com dashboard 17709 or any other public dashboard
+- No `gnetId` / community import lineage
+- Uses only standard `pgbackrest_exporter` metric names (public API, not copied dashboard JSON)
 
 ## Import
 

@@ -8,8 +8,8 @@ Monitor pgBackRest backups in Grafana using **pgbackrest_exporter** + Prometheus
 |------|-------|
 | Name | `thedbadmin.com_backrest_mon_deshboard` |
 | Grafana URL | http://192.168.1.42:3000/d/thedbadmin-backrest-mon/thedbadmin-com-backrest-mon-deshboard |
-| Import file | `thedbadmin.com_backrest_mon_deshboard.json` |
-| Based on | Grafana dashboard 17709 (pgbackrest_exporter) |
+| Dashboard file | `thedbadmin.com_backrest_mon_deshboard.json` |
+| Origin | **Original thedbadmin.com build** — not imported from Grafana.com or any third-party dashboard |
 
 ## Architecture
 
@@ -69,7 +69,19 @@ docker compose -f /root/monitoring/docker-compose.yml restart prometheus
 
 Verify target: http://192.168.1.42:9090/targets → `pgbackrest` should be **UP**
 
-## Step 3 — Import Grafana dashboard
+## Step 3 — Deploy the original Grafana dashboard
+
+This dashboard was written from scratch for this lab. Do **not** use community dashboard ID 17709 or any other third-party JSON.
+
+**Option A — file provisioning (recommended for the lab):**
+
+```bash
+cp grafana/dashboards/thedbadmin.com_backrest_mon_deshboard.json \
+   /root/monitoring/grafana/provisioning/dashboards/json/
+docker compose -f /root/monitoring/docker-compose.yml restart grafana
+```
+
+**Option B — manual import:**
 
 1. Grafana → **Import** → upload `thedbadmin.com_backrest_mon_deshboard.json`
 2. Select Prometheus datasource
@@ -118,7 +130,7 @@ pg1-user=postgres
 
 | File | Purpose |
 |------|---------|
-| `thedbadmin.com_backrest_mon_deshboard.json` | Grafana dashboard (import) |
+| `thedbadmin.com_backrest_mon_deshboard.json` | Original Grafana dashboard (thedbadmin.com) |
 | `pgbackrest_exporter.service` | systemd unit for database VM |
 | `prometheus-scrape-snippet.yml` | Full live prometheus.yml from lab |
 | `README-PGBACKREST-MONITORING.md` | This guide |
