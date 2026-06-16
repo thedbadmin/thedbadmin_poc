@@ -1,17 +1,36 @@
-# pgBackRest — Database VM (/root/database)
+# pgBackRest + pgbackrest_exporter — Student Files
 
-Runs on `postgres-server` VM. Includes backups + Prometheus exporter.
+All files for this lab are in **this folder** (`database/pgbackrest/`).
 
-## Provision
+## Files
+
+| File | Purpose |
+|------|---------|
+| **STUDENT-INSTALL-PGBACKREST-EXPORTER.md** | Start here — step-by-step install guide |
+| `pgbackrest_exporter.service` | systemd unit for the exporter |
+| `pgbackrest.conf` | Example pgBackRest config (stanza `prod01`) |
+| `provision.sh` | Automated install (used by Vagrant) |
+| `daily_bkp.sh` | Example backup cron script |
+| `prometheus-pgbackrest-scrape.yml` | Prometheus scrape config for monitoring VM |
+| `thedbadmin.com_backrest_mon_deshboard.json` | Original Grafana dashboard |
+| `README-DASHBOARD.md` | Dashboard panel reference |
+
+## Quick start
+
+**Database VM:**
 ```bash
 cd /root/database
 vagrant provision postgres_server
 ```
 
-## Components
-- pgBackRest stanza `prod01`
-- Cron: Sunday full, Mon-Sat incremental
-- pgbackrest_exporter on port **9854**
+**Manual install:** open `STUDENT-INSTALL-PGBACKREST-EXPORTER.md`
 
-## Student guide
-See **[STUDENT-INSTALL-PGBACKREST-EXPORTER.md](STUDENT-INSTALL-PGBACKREST-EXPORTER.md)** for step-by-step install and verification.
+## Lab ports
+
+| Service | Port |
+|---------|------|
+| pgbackrest_exporter | 9854 |
+| postgres_exporter | 9187 |
+| node_exporter | 9100 |
+| Prometheus | 9090 |
+| Grafana | 3000 |

@@ -2,6 +2,18 @@
 
 Simple steps to install **pgbackrest_exporter** on the **database VM** so Prometheus and Grafana can monitor pgBackRest backups.
 
+All files you need are in this folder: `database/pgbackrest/`
+
+| File | Use |
+|------|-----|
+| `pgbackrest_exporter.service` | Copy to `/etc/systemd/system/` |
+| `pgbackrest.conf` | Example config → `/etc/pgbackrest.conf` |
+| `daily_bkp.sh` | Example backup script |
+| `provision.sh` | Full automated setup (Vagrant) |
+| `prometheus-pgbackrest-scrape.yml` | Add to Prometheus on monitoring VM |
+| `thedbadmin.com_backrest_mon_deshboard.json` | Import into Grafana |
+| `README-DASHBOARD.md` | Dashboard panel reference |
+
 ---
 
 ## What you are installing
@@ -73,10 +85,10 @@ chmod +x /usr/local/bin/pgbackrest_exporter
 
 ### Step 2 — Create the systemd service
 
-Copy the service file from this repo:
+Copy the service file from this folder:
 
 ```bash
-cp /vagrant/pgbackrest/pgbackrest_exporter.service /etc/systemd/system/
+cp pgbackrest_exporter.service /etc/systemd/system/
 ```
 
 Or create `/etc/systemd/system/pgbackrest_exporter.service` with:
@@ -146,7 +158,9 @@ pgbackrest_exporter_status 1
 
 ## Connect Prometheus (monitoring VM)
 
-On the **monitoring VM**, add a scrape job in `prometheus/prometheus.yml`:
+On the **monitoring VM**, add the scrape job from `prometheus-pgbackrest-scrape.yml` into `prometheus/prometheus.yml`.
+
+Change `192.168.1.107` to your database VM IP if different:
 
 ```yaml
   - job_name: 'pgbackrest'
@@ -180,7 +194,7 @@ curl -s 'http://192.168.1.42:9090/api/v1/query?query=pgbackrest_stanza_status'
 ## View in Grafana
 
 1. Open Grafana: http://192.168.1.42:3000 (`admin` / `Admin@123`)
-2. Open dashboard: **thedbadmin.com_backrest_mon_deshboard**
+2. **Import** → upload `thedbadmin.com_backrest_mon_deshboard.json` from this folder
 3. Set variable **Stanza** = `prod01`
 
 Direct link:
@@ -203,7 +217,7 @@ http://192.168.1.42:3000/d/thedbadmin-backrest-mon/thedbadmin-com-backrest-mon-d
 
 ## Example pgBackRest config
 
-Lab file: `database/pgbackrest/pgbackrest.conf`
+Lab file: `pgbackrest.conf` (in this folder)
 
 ```ini
 [global]
